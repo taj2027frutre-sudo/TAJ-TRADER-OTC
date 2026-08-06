@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from quotexapi.stable_api import Quotex
+from pyquotex.stable_api import Quotex
 
 load_dotenv()
 app = FastAPI(title="TAJ TRADER OTC", version="0.1")
@@ -13,8 +13,7 @@ app = FastAPI(title="TAJ TRADER OTC", version="0.1")
 EMAIL=os.getenv("QUOTEX_EMAIL","").strip()
 PASSWORD=os.getenv("QUOTEX_PASSWORD","").strip()
 EMAIL_PASS=os.getenv("QUOTEX_EMAIL_PASS","").strip() or None
-
-client = Quotex(email=EMAIL, password=PASSWORD, email_pass=EMAIL_PASS)
+client = Quotex(email=EMAIL, password=PASSWORD, lang="en")
 lock = asyncio.Lock()
 
 def num(v, default=None):
