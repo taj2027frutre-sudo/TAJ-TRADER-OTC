@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070A10"><link rel="manifest" href="/static/manifest.json">
+<title>تاج تريدر OTC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070a10;color:#f8fafc;font-family:Arial}
+.wrap{max-width:900px;margin:auto;padding:18px}.hero{padding:20px;border:1px solid #3c3214;border-radius:20px;background:linear-gradient(145deg,#15171c,#0b0e14)}
+.brand{font-size:28px;font-weight:900;color:#f2cf61}.sub,.note{color:#94a3b8;font-size:13px;line-height:1.6}
+.card{margin-top:14px;padding:15px;border:1px solid #242b38;border-radius:16px;background:#0f141e}
+select,button{width:100%;padding:12px;border-radius:11px;border:1px solid #343d4d;background:#101722;color:white}
+button{background:linear-gradient(145deg,#e3bd45,#987018);color:#111;font-weight:900;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.pair{padding:10px;border:1px solid #273142;border-radius:12px;background:#111827}
+.pair label{display:flex;gap:8px;align-items:center}.pair input{width:18px;height:18px}
+.results{display:grid;gap:9px}.result{padding:13px;border:1px solid #283244;border-radius:14px;background:#111827}
+.head{display:flex;justify-content:space-between}.call{color:#4ade80}.put{color:#fb7185}.no{color:#fbbf24}.closed{color:#94a3b8}
+.big{font-size:22px;font-weight:900;margin:10px 0}.meta{font-size:12px;color:#94a3b8}
+@media(min-width:720px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style></head>
+<body><div class="wrap">
+<div class="hero"><div class="brand">👑 تاج تريدر OTC</div>
+<div class="sub">قراءة شموع OTC على M1 من السيرفر وتحليلها — لا ينفذ صفقات تلقائيًا.</div></div>
+
+<div class="card">
+<b>اختر الأزواج</b>
+<div class="grid" id="pairs" style="margin-top:12px"></div>
+<button id="scan" style="margin-top:12px">تحليل الأزواج المختارة</button>
+<div class="note" id="health" style="margin-top:9px">فحص اتصال السيرفر...</div>
+</div>
+
+<div class="card">
+<b>نتائج التحليل</b>
+<div class="results" id="results" style="margin-top:12px"><div class="note">لم يبدأ التحليل بعد.</div></div>
+</div>
+
+<div class="card note">
+الإشارة لا تعني ضمان الربح. إذا كانت التأكيدات متضاربة يعرض تاج تريدر NO TRADE. ابدأ بحساب Demo وقارن الشموع مع Quotex قبل الاعتماد على النتائج.
+</div>
+</div>
+<script>
+const assets=["EURUSD_otc","GBPUSD_otc","USDJPY_otc","AUDCAD_otc","AUDJPY_otc","AUDUSD_otc","EURCHF_otc","EURGBP_otc","EURJPY_otc","GBPAUD_otc","GBPJPY_otc","NZDCAD_otc"];
+const p=document.getElementById("pairs"),r=document.getElementById("results");
+assets.forEach((a,i)=>p.insertAdjacentHTML("beforeend",`<div class="pair"><label><input type="checkbox" value="${a}" ${i<4?"checked":""}>${a.replace("_otc","-OTC")}</label></div>`));
+async function health(){
+ try{let x=await fetch("/api/health").then(x=>x.json());document.getElementById("health").textContent=x.configured?"السيرفر مضبوط ✓":"السيرفر يعمل، لكن حساب Demo غير مضبوط بعد";}
+ catch{document.getElementById("health").textContent="تعذر الوصول للسيرفر";}
+}
+document.getElementById("scan").onclick=async()=>{
+ const chosen=[...document.querySelectorAll("input:checked")].map(x=>x.value);
+ if(!chosen.length)return;
+ r.innerHTML="";
+ for(const a of chosen){
+   const box=document.createElement("div");box.className="result";box.innerHTML=`<div class="head"><b>${a.replace("_otc","-OTC")}</b><span>جاري القراءة...</span></div>`;r.appendChild(box);
+   try{
+     const res=await fetch("/api/analyze?asset="+encodeURIComponent(a));
+     const d=await res.json();
+     if(!res.ok)throw new Error(d.detail||"خطأ");
+     const cls=d.signal==="CALL"?"call":d.signal==="PUT"?"put":d.signal==="CLOSED"?"closed":"no";
+     box.innerHTML=`<div class="head"><b>${a.replace("_otc","-OTC")}</b><span>${d.candles||0} شمعة</span></div>
+     <div class="big ${cls}">${d.signal}</div>
+     <div class="meta">قوة التأكيد: ${d.confidence||0}% ${d.rsi!=null?"• RSI "+d.rsi:""}<br>${(d.reasons||[]).join(" + ")}</div>`;
+   }catch(e){box.innerHTML=`<b>${a}</b><div class="big no">ERROR</div><div class="meta">${e.message}</div>`}
+ }
+};
+health();
+</script></body></html>

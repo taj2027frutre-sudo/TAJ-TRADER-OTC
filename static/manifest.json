@@ -1,0 +1,9 @@
+{
+  "name": "تاج تريدر OTC",
+  "short_name": "تاج تريدر",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070A10",
+  "theme_color": "#070A10",
+  "icons": []
+}
